@@ -4,6 +4,7 @@
 import gym
 import numpy as np
 import math
+import matplotlib.pyplot as plt
 
 
 def create_buckets(n, low, high):
@@ -119,10 +120,10 @@ def update(state, action, reward, next_state, learning_rate, discount_factor):
     set_qvalue(state, action, update_value)
 
 
-def run(num_episodes=1, epsilon=5e-1, learning_rate=2e-1, discount_factor=9e-1, verbose=False):
+def run(num_episodes=1, epsilon=5e-1, learning_rate=2e-1, discount_factor=9e-1, verbose=False, history=[]):
     """Run set trials with selected hyper parameters."""
     window = []
-    total_reward = 0.0
+    solved = False
     for i in range(num_episodes):
         episode_reward = 0.0
         # Decay hyper params
@@ -142,22 +143,23 @@ def run(num_episodes=1, epsilon=5e-1, learning_rate=2e-1, discount_factor=9e-1, 
             episode_reward += reward
             if done:
                 break
-
-        total_reward += episode_reward
         # Rolling mean to determine solved
         window.append(episode_reward)
         if len(window) == 100:
             avg_reward = np.array(window).mean()
+            history.append(avg_reward)
             if avg_reward > 195.0:
                 # CartPole-v0 defines "solving" as getting average reward of 195.0 over 100 consecutive trials.
                 print('Solved in {} episodes with average reward {}.'.format(i + 1, avg_reward))
-                demo()
-                return avg_reward
+                solved = True
+                # demo()
+                # return avg_reward
             # Slide window
             window.pop(0)
 
-    if verbose:
+    if verbose and not solved:
         print('Not Solved with last window average reward of {}.'.format(avg_reward))
+
     return avg_reward
 
 
@@ -207,5 +209,16 @@ def run_hyper_param_optim():
     print('Max discount factor: {}'.format(max_d))
 
 
+def graph(history):
+    """Graph rewards."""
+    fig, axs = plt.subplots(nrows=1, ncols=1)
+    axs.grid()
+    axs.plot(range(1, len(history) + 1), history)
+    axs.set(xlabel='Episode', ylabel='Average Reward', title='Episode Rewards')
+    plt.show()
+
+
 # run_hyper_param_optim()
-run(num_episodes=800, epsilon=1e-2, learning_rate=1e-1, discount_factor=99e-2, verbose=True)
+history = []
+run(num_episodes=800, epsilon=1e-5, learning_rate=1e-1, discount_factor=99e-2, verbose=True, history=history)
+graph(history)
